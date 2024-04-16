@@ -12,25 +12,29 @@ const uuid = require('uuid');
 const app = new Koa();
 const public = path.join(__dirname, '/public');
 
-//for all
+const { processingQuery } = require('./api/processingRequest.js');
 
 app.use(koaBody({
-  text: true,
-  urlencoded: true,
-  multipart: true,
-  json: true,
+	text: true,
+	urlencoded: true,
+	multipart: true,
+	json: true,
 }))
 	.use(koaStatic(public))
 	.use(cors())
-	
+	.use(async ctx => {
+		try {
+			const resp = await processingQuery(ctx.request.querystring, ctx.request.body)
 
+			ctx.response.body = resp;
+		} catch (err) {
 
-	.use(ctx => {
-		const { message } = ctx.request.body;
-		ctx.response.body = message;
+			console.log(err)
+			ctx.response.status = 500;
+			ctx.response.body = "Сайт временно недоступен"
+		}
 	})
-
-
 
 const port = process.env.PORT || 7070;
 const server = http.createServer(app.callback()).listen(port)
+
